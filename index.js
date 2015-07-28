@@ -15,16 +15,16 @@ console.log("Welcome to SockMon! You are currently configured to use the default
 function processInput(data) {
 	data = data.toString().trim();
 	if (!currCommand) {
-		if (data.toLowerCase === "start") {
+		if (data.toLowerCase() === "start") {
 			if (!server) startServer();
 			else console.log("Server already listening on port 8000!");
-		} else if (data.toLowerCase === "config") {
+		} else if (data.toLowerCase() === "config") {
 			currCommand = "config";
 			console.log("Enter config file: ");
-		} else if (data.toLowerCase === "stop") {
+		} else if (data.toLowerCase() === "stop") {
 			if (!server) console.log("Server is not running!");
-			stopServer();
-		} else if (data.toLowerCase === "exit") {
+			else stopServer();
+		} else if (data.toLowerCase() === "exit") {
 			console.log("Goodbye!");
 			process.exit()
 		} else {
@@ -65,11 +65,13 @@ function startServer()  {
 
 	// Start the server
 	server.start();
+	console.log("Server started! You can access it at localhost:8000");
 }
 
 function stopServer() {
 	server.stop();
 	server = null;
+	console.log("Server stopped!");
 }
 
 
