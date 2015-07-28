@@ -8,11 +8,12 @@ var currCommand = "";
 var server;
 
 var stdin = process.openStdin();
+stdin.setEncoding( 'utf8' );
 stdin.on('data', processInput);
 console.log("Welcome to SockMon! You are currently configured to use the default config. If you want to get started, type 'start'. To change the config file, try 'config'. To exit, type 'exit'. ");
 
 function processInput(data) {
-	data = data.toString("utf-8").trim();
+	data = data.toString().trim();
 	if (!currCommand) {
 		if (data.toLowerCase === "start") {
 			if (!server) startServer();
