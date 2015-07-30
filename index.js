@@ -12,6 +12,8 @@ stdin.setEncoding( 'utf8' );
 stdin.on('data', processInput);
 console.log("Welcome to SockMon! You are currently configured to use the default config. If you want to get started, type 'start'. To change the config file, try 'config'. To exit, type 'exit'. ");
 
+currConfig = "example.config.yml";
+
 function processInput(data) {
 	data = data.toString().trim();
 	if (!currCommand) {
@@ -19,8 +21,12 @@ function processInput(data) {
 			if (!server) startServer();
 			else console.log("Server already listening on port 8000!");
 		} else if (data.toLowerCase() === "config") {
-			currCommand = "config";
-			console.log("Enter config file: ");
+			if (server) {
+				console.log("SockBot is running, please stop before changing config.");
+			} else {
+				currCommand = "config";
+				console.log("Enter config file: ");
+			}
 		} else if (data.toLowerCase() === "stop") {
 			if (!server) console.log("Server is not running!");
 			else stopServer();
@@ -30,6 +36,12 @@ function processInput(data) {
 		} else {
 			console.log("Unknown command: '" + data.toLowerCase() + "'")
 		}
+	}
+	
+	if (currCommand === "config") {
+		currConfig = data;
+		currCommand = "";
+		console.log("Config file accepted.");
 	}
 }
 
@@ -66,13 +78,14 @@ function startServer()  {
 	// Start the server
 	server.start();
 	console.log("Server started! You can access it at localhost:8000");
+	
+	//Start the bot
+	bot.start(currConfig);
 }
 
 function stopServer() {
 	server.stop();
+	bot.stop();
 	server = null;
 	console.log("Server stopped!");
 }
-
-
-// Create a server with a host and port
