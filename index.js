@@ -87,6 +87,7 @@ module.exports = {
 }
 
 //Autostart
+/* istanbul ignore if */
 if(require.main === module) { 
 	module.exports.init();
 }

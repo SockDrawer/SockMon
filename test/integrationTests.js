@@ -91,4 +91,15 @@ describe("The command-line parser", function() {
 			done();
 		});
 	});
+
+	it("should reject garbage inputs", function(done) {
+		var nonsense = "nananananananana BATMAN!";
+		mockOut.reset();
+
+		mockCMD.emit("data",nonsense, function() {
+			assert(processInputSpy.called,"ProcessInput should be called");
+			assert.equal(mockOut.firstCall.args[0],"Unknown command: '" + nonsense.toLowerCase() + "'");
+			done();
+		});
+	});
 })
