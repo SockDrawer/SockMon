@@ -2,6 +2,8 @@ var assert = require('chai').assert;
 var sinon = require('sinon');
 var EventEmitter = require('async-eventemitter');
 var sockMon = require('../index.js');
+var storage = require('node-persist');
+var bcrypt = require('bcryptjs');
 
 //dependencies to mock
 var bot = require("sockbot");
@@ -100,6 +102,33 @@ describe("The command-line parser", function() {
 			assert(processInputSpy.called,"ProcessInput should be called");
 			assert.equal(mockOut.firstCall.args[0],"Unknown command: '" + nonsense.toLowerCase() + "'");
 			done();
+		});
+	});
+
+	it("should change passwords", function(done) {
+		var storageMock = sandbox.spy(storage,"setItem");
+
+		mockCMD.emit("data","set pass", function() {
+			mockCMD.emit("data","B4c0n", function() {
+				assert(storageMock.called,"Storage should be involved");
+				assert.equal("pass", storageMock.firstCall.args[0],"Pass should be updated");
+				var encrypted = storageMock.firstCall.args[1];
+				assert(bcrypt.compareSync("B4c0n", encrypted),"Correct password should be saved");
+				done();
+			});
+		});
+	});
+
+	it("should change usernames", function(done) {
+		var storageMock = sandbox.spy(storage,"setItem");
+
+		mockCMD.emit("data","set user", function() {
+			mockCMD.emit("data","eggs", function() {
+				assert(storageMock.called,"Storage should be involved");
+				assert.equal("user", storageMock.firstCall.args[0],"User should be updated");
+				assert("eggs",storageMock.firstCall.args[1],"Correct username should be saved");
+				done();
+			});
 		});
 	});
 })
