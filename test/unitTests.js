@@ -131,4 +131,16 @@ describe("The command-line parser", function() {
 			});
 		});
 	});
+	
+	it("should set a default password", function() {
+		var storageMockSet = sandbox.spy(storage,"setItem");
+		var storageMockGet = sandbox.stub(storage,"getItem").returns("");
+		sandbox.stub(storage, "initSync");
+		sockMon.init();
+		
+		assert(storageMockGet.called,"Storage get should be called");
+		assert(storageMockSet.called,"Storage set should be called");
+		assert.equal("user", storageMockSet.firstCall.args[0],"User should be updated");
+		assert.equal("pass", storageMockSet.secondCall.args[0],"Pass should be updated");
+	});
 })
