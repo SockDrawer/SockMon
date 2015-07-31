@@ -44,6 +44,12 @@ module.exports = {
 				module.exports.respond("Unknown command: '" + data.toLowerCase() + "'")
 			}
 		}
+
+		if (currCommand === "config") {
+			currConfig = data;
+			currCommand = "";
+			console.log("Config file accepted.");
+		}
 	},
 
 	startServer: function() {
