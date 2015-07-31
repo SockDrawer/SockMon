@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": " node --harmony --harmony_arrow_functions index.js",
-    "test": "./node_modules/.bin/istanbul test ./node_modules/mocha/bin/_mocha -- -R spec --harmony"
+    "test": "mocha  -R spec --harmony"
   },
   "repository": {
     "type": "git",
@@ -19,7 +19,7 @@
   "homepage": "https://github.com/yamikuronue/SockMon",
   "devDependencies": {
     "chai": "^3.2.0",
-    "istanbul": "^0.3.17",
+    "istanbul-harmony": "^0.3.16",
     "mocha": "^2.2.5",
     "sinon": "^1.15.4"
   },

@@ -8,7 +8,7 @@ var bcrypt = require('bcryptjs');
 var Basic = require('hapi-auth-basic');
 
 var currCommand = "";
-var server, stdin;
+var server, stdin, botRunning = false;
 
 currConfig = "example.config.yml";
 
@@ -87,6 +87,7 @@ module.exports = {
 	},
 
 	startServer: function() {
+		module.exports.startBot();
 		server = new Hapi.Server();
 		server.connection({ 
 			host: 'localhost', 
@@ -125,12 +126,9 @@ module.exports = {
 				config: {
 		            auth: 'simple',
 		            handler: function (request, reply) {
-						reply.view('index', {
-							version: botVersion,
+						reply.view('admin', {
 							username: botConfigHelper.core.username,
-							owner: botConfigHelper.core.owner,
-							forum: botConfigHelper.core.forum,
-							plugins: Object.keys(botConfigHelper.plugins)
+							running: botRunning
 						});
 					}
 		        }
@@ -141,14 +139,18 @@ module.exports = {
 			server.start();
 			module.exports.respond("Server started! You can access it at localhost:8000");
 		});
-		
-
-		
 	},
 	stopServer: function() {
+		module.exports.startBot();
 		server.stop();
 		server = null;
 		this.respond("Server stopped!");
+	},
+	startBot: function() {
+		botRunning = true;
+	},
+	stopBot: function() {
+		botRunning = false;
 	}
 }
 
