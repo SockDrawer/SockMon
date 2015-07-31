@@ -1,6 +1,6 @@
 var  bot = require("sockbot");
 var botVersion = bot.version;
-//var botConfigHelper = require('./node_modules/sockbot/config');
+var botConfigHelper = require('./node_modules/sockbot/config');
 var Path = require('path');
 var Hapi = require('hapi');
 var storage = require('node-persist');
@@ -100,9 +100,6 @@ module.exports = {
 			path: Path.join(__dirname, 'templates')
 		});
 
-		//Auth for admin route
-		server.auth.strategy('simple', 'basic', { validateFunc: validate });
-
 		// Add the routes
 		server.route({
 			method: 'GET',
@@ -118,27 +115,35 @@ module.exports = {
 			}
 		});
 
-		server.route({
-			method: 'GET',
-			path:'/admin', 
-			config: {
-	            auth: 'simple',
-	            handler: function (request, reply) {
-					reply.view('index', {
-						version: botVersion,
-						username: botConfigHelper.core.username,
-						owner: botConfigHelper.core.owner,
-						forum: botConfigHelper.core.forum,
-						plugins: Object.keys(botConfigHelper.plugins)
-					});
-				}
-	        }
-			
-		});
+		server.register(Basic, function (err) {
+			//Auth for admin route
+			server.auth.strategy('simple', 'basic', { validateFunc: validate });
 
-		// Start the server
-		server.start();
-		this.respond("Server started! You can access it at localhost:8000");
+			server.route({
+				method: 'GET',
+				path:'/admin', 
+				config: {
+		            auth: 'simple',
+		            handler: function (request, reply) {
+						reply.view('index', {
+							version: botVersion,
+							username: botConfigHelper.core.username,
+							owner: botConfigHelper.core.owner,
+							forum: botConfigHelper.core.forum,
+							plugins: Object.keys(botConfigHelper.plugins)
+						});
+					}
+		        }
+				
+			});
+
+			// Start the server
+			server.start();
+			module.exports.respond("Server started! You can access it at localhost:8000");
+		});
+		
+
+		
 	},
 	stopServer: function() {
 		server.stop();
@@ -153,7 +158,7 @@ var validate = function (request, username, password, callback) {
     }
 
     bcrypt.compare(password, storage.getItem('pass'), function (err, isValid) {
-        callback(err, isValid, {}); //We only have one user, we know who you are
+        callback(err, isValid, {name: username}); 
     });
 };
 
