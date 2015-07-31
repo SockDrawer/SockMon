@@ -28,6 +28,7 @@
     "bcryptjs": "^2.2.0",
     "handlebars": "^3.0.3",
     "hapi": "^8.8.0",
+    "hapi-auth-basic": "^3.0.0",
     "node-persist": "0.0.6",
     "sockbot": "git://github.com/SockDrawer/SockBot#es6-dev"
   }

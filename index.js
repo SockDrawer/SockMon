@@ -5,6 +5,7 @@ var Path = require('path');
 var Hapi = require('hapi');
 var storage = require('node-persist');
 var bcrypt = require('bcryptjs');
+var Basic = require('hapi-auth-basic');
 
 var currCommand = "";
 var server, stdin;
@@ -99,7 +100,10 @@ module.exports = {
 			path: Path.join(__dirname, 'templates')
 		});
 
-		// Add the route
+		//Auth for admin route
+		server.auth.strategy('simple', 'basic', { validateFunc: validate });
+
+		// Add the routes
 		server.route({
 			method: 'GET',
 			path:'/', 
@@ -114,6 +118,24 @@ module.exports = {
 			}
 		});
 
+		server.route({
+			method: 'GET',
+			path:'/admin', 
+			config: {
+	            auth: 'simple',
+	            handler: function (request, reply) {
+					reply.view('index', {
+						version: botVersion,
+						username: botConfigHelper.core.username,
+						owner: botConfigHelper.core.owner,
+						forum: botConfigHelper.core.forum,
+						plugins: Object.keys(botConfigHelper.plugins)
+					});
+				}
+	        }
+			
+		});
+
 		// Start the server
 		server.start();
 		this.respond("Server started! You can access it at localhost:8000");
@@ -124,6 +146,16 @@ module.exports = {
 		this.respond("Server stopped!");
 	}
 }
+
+var validate = function (request, username, password, callback) {
+    if (username !== storage.getItem('user')) {
+        return callback(null, false);
+    }
+
+    bcrypt.compare(password, storage.getItem('pass'), function (err, isValid) {
+        callback(err, isValid, {}); //We only have one user, we know who you are
+    });
+};
 
 //Autostart
 /* istanbul ignore if */
