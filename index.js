@@ -39,7 +39,7 @@ module.exports = {
 				if (!server) module.exports.startServer();
 				else module.exports.respond("Server already listening on port 8000!");
 			} 
-			else if (data.toLowerCase() === "config" | data.toLowerCase() === "set config") {
+			else if (data.toLowerCase() === "config" || data.toLowerCase() === "set config") {
 				currCommand = "config";
 				module.exports.respond("Enter config file: ");
 			} 
@@ -86,7 +86,7 @@ module.exports = {
 			currCommand = "";
 			module.exports.respond("Password changed.");
 		}
-
+		/* istanbul ignore else */
 		else if (currCommand === "user") {
 			storage.setItem('user',data);
 			currCommand = "";
@@ -149,10 +149,13 @@ module.exports = {
 		});
 	},
 	stopServer: function() {
-		module.exports.startBot();
-		server.stop();
-		server = null;
-		this.respond("Server stopped!");
+		module.exports.stopBot();
+		/* istanbul ignore else */
+		if (server) {
+			server.stop();
+			server = null;
+		}
+		module.exports.respond("Server stopped!");
 	},
 	startBot: function() {
 		botRunning = true;
