@@ -30,6 +30,14 @@ describe("The command-line parser", function() {
 		sandbox.restore();
 	})
 
+	it("should be able to respond", function() {
+		var mockConsole = sandbox.stub(console, "log");
+		var string = "the quick brown fox jumps over the lazy dog";
+		sockMon.respond(string);
+		assert(mockConsole.called,"Console log should be called");
+		assert.equal(mockConsole.firstCall.args[0],string);
+	});
+
 	it("should exit when asked", function(done) {
 		var mockExit = sandbox.stub(process,"exit").returns();
 
@@ -142,5 +150,77 @@ describe("The command-line parser", function() {
 		assert(storageMockSet.called,"Storage set should be called");
 		assert.equal("user", storageMockSet.firstCall.args[0],"User should be updated");
 		assert.equal("pass", storageMockSet.secondCall.args[0],"Pass should be updated");
+	});
+	
+	it("should change configs", function(done) {
+		var storageMock = sandbox.spy(storage,"setItem");
+		mockOut.reset();
+		
+		mockCMD.emit("data","set config", function() {
+			assert.equal(mockOut.firstCall.args[0],"Enter config file: ","Config file should be accepted");
+			mockOut.reset();
+			mockCMD.emit("data","someconfig.yml", function() {
+				assert.equal(mockOut.firstCall.args[0],"Config file accepted.","Config file should be accepted");
+				done();
+			});
+		});
+	});
+	
+	it("should respond to 'set' with 'help'", function(done) {
+		var storageMock = sandbox.spy(storage,"setItem");
+		mockOut.reset();
+		
+		mockCMD.emit("data","set", function() {
+			assert(mockOut.calledWith("USAGE: Set [user|pass|config]"));
+			done();
+		});
+	});
+	
+	it("should be able to pause the bot if it's running", function(done) {
+		var stopMock = sandbox.spy(sockMon,"stopBot");
+		sockMon.startBot();
+
+		mockCMD.emit("data","pause", function() {
+			assert(processInputSpy.calledOnce,"ProcessInput should be called");
+			assert(stopMock.calledOnce,"StopBot should be called only once");
+			done();
+		});
+	});
+	
+	it("should not be able to pause the bot if it's not running", function(done) {
+		var stopMock = sandbox.spy(sockMon,"stopBot");
+
+		mockCMD.emit("data","pause", function() {
+			assert(processInputSpy.calledOnce,"ProcessInput should be called");
+			assert.isFalse(stopMock.called,"StopBot should not be called");
+			done();
+		});
+	});
+
+	it("should be able to resume a paused bot", function(done) {
+		var stopMock = sandbox.spy(sockMon,"stopBot");
+		
+		sockMon.startBot();
+		var startMock = sandbox.spy(sockMon,"startBot");
+
+		mockCMD.emit("data","pause", function() {
+			mockCMD.emit("data","resume", function() {
+				assert(processInputSpy.calledTwice,"ProcessInput should be called");
+				assert(stopMock.calledOnce,"StopBot should be called only once");
+				assert(startMock.calledOnce,"StartBot should be called only once");
+				done();
+			});
+		});
+	});
+
+	it("should not resume the bot if it's running", function(done) {
+		var stopMock = sandbox.spy(sockMon,"stopBot");
+		sockMon.startBot();
+
+		mockCMD.emit("data","resume", function() {
+			assert(processInputSpy.called,"ProcessInput should be called");
+			assert.isFalse(stopMock.called,"StopBot should not be called");
+			done();
+		});
 	});
 })

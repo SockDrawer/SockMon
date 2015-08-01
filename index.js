@@ -47,6 +47,14 @@ module.exports = {
 				if (!server) module.exports.respond("Server is not running!");
 				else module.exports.stopServer();
 			} 
+			else if (data.toLowerCase() === "pause") {
+				if (!botRunning) module.exports.respond("Bot is not running!");
+				else module.exports.stopBot();
+			} 
+			else if (data.toLowerCase() === "resume") {
+				if (botRunning) module.exports.respond("Bot is already running!");
+				else module.exports.startBot();
+			} 
 			else if (data.toLowerCase() === "exit") {
 				module.exports.respond("Goodbye!");
 				process.exit();
@@ -70,7 +78,7 @@ module.exports = {
 		else if (currCommand === "config") {
 			currConfig = data;
 			currCommand = "";
-			console.log("Config file accepted.");
+			module.exports.respond("Config file accepted.");
 		}
 
 		else if (currCommand === "pass") {
