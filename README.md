@@ -15,6 +15,7 @@ Console commands:
 - `start`: Starts the server and bot both
 - `pause`: Stops the bot, but leaves the server running
 - `resume`: Starts the bot again after a pause
+- `exit`: Stops the server and both both
 - `set user`: Set the username for the admin web interface
 - `set pass`: Set the password for the admin web interface
 - `set config`: Set the config file for the bot
