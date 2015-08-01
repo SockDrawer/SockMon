@@ -33,6 +33,7 @@ describe("The command-line parser", function() {
 	it("should be able to respond", function() {
 		var mockConsole = sandbox.stub(console, "log");
 		var string = "the quick brown fox jumps over the lazy dog";
+		mockOut.restore();
 		sockMon.respond(string);
 		assert(mockConsole.called,"Console log should be called");
 		assert.equal(mockConsole.firstCall.args[0],string);
