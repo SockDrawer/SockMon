@@ -10,17 +10,40 @@
 
 	<!-- Optional theme -->
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.5/darkly/bootstrap.min.css">
+	<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
 	
 	<title>Administrate @{{username}}</title>
+	
+	<script>
+		$.ready(function() {
+			$('#pauseButton').click(function() {
+				$.get('/admin/pause',null,function() {
+					$('#resumeButton').show();
+					$('#pauseButton').hide();
+				})
+			});
+			
+			$('#resumeButton').click(function() {
+				$.get('/admin/resume',null,function() {
+					$('#pauseButton').show();
+					$('#resumeButton').hide();
+				})
+			})
+			
+			$('#stopButton').click(function() {
+				$.get('/admin/stop')
+			})
+		})
+	</script>
 </head>
 
 <body>
 	<h1>Administrate @{{username}}</h1>
 
 	<div class="btn-group" role="group" aria-label="...">
-	  <button type="button" class="btn btn-default"><span class="glyphicon glyphicon-stop" aria-hidden="true" aria-label="stop bot"></span></button>
-	  <button type="button" class="btn btn-default"><span class="glyphicon glyphicon-pause" aria-hidden="true" aria-label="pause bot"{{#if running}}{{else}}style="visibility:hidden"{{/if}}></span></button>
-	  <button type="button" class="btn btn-default" {{#if running}}style="visibility:hidden"{{/if}}><span class="glyphicon glyphicon-play" aria-hidden="true" aria-label="resume bot"></span></button>
+	  <button type="button" class="btn btn-default" id="stopButton"><span class="glyphicon glyphicon-stop" aria-hidden="true" aria-label="stop bot"></span></button>
+	  <button type="button" class="btn btn-default" id="pauseButton" {{#if running}}{{else}}style="visibility:hidden"{{/if}}><span class="glyphicon glyphicon-pause" aria-hidden="true" aria-label="pause bot"></span></button>
+	  <button type="button" class="btn btn-default" {{#if running}}style="visibility:hidden"{{/if}} id="resumeButton"><span class="glyphicon glyphicon-play" aria-hidden="true" aria-label="resume bot"></span></button>
 	</div>
 	<!-- Latest compiled and minified JavaScript -->
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
