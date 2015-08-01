@@ -27,9 +27,12 @@ describe("The website", function() {
 		mockOpen.restore();
 	});
 	
-	afterEach(function() {
-		sockMon.stopServer();
-		sandbox.restore();
+	afterEach(function(done) {
+		sockMon.stopServer(function() {
+			sandbox.restore();
+			done();
+		});
+		
 	});
 	
 	it("should serve a page", function(done) {
@@ -87,6 +90,46 @@ describe("The website", function() {
 				assert.equal(401, response.statusCode, "status code should be 401");
 				done();
 			}).auth('Jotaro', 'Bizzarre');
+		});
+	});
+	
+	it("should pause the bot if authorized", function(done) {
+		var storageMockGet = sandbox.stub(storage,"getItem").withArgs("user").returns("Jotaro").withArgs("pass").returns(bcrypt.hashSync("adventure"));
+		
+		mockCMD.emit("data","start", function() {
+			request('http://localhost:8000/admin/pause', function (error, response, body) {
+				assert.notOk(error, "No error should be thrown");
+				assert.equal(200, response.statusCode, "status code should be 200");
+				assert.equal(body, "bot stopped!", "Bot should be stopped");
+				done();
+			}).auth('Jotaro', 'adventure');
+		});
+	});
+	
+	it("should resume the bot if paused", function(done) {
+		var storageMockGet = sandbox.stub(storage,"getItem").withArgs("user").returns("Jotaro").withArgs("pass").returns(bcrypt.hashSync("adventure"));
+		
+		mockCMD.emit("data","start", function() {
+			sockMon.stopBot();
+			request('http://localhost:8000/admin/resume', function (error, response, body) {
+				assert.notOk(error, "No error should be thrown");
+				assert.equal(200, response.statusCode, "status code should be 200");
+				assert.equal(body, "bot started!", "Bot should be started");
+				done();
+			}).auth('Jotaro', 'adventure');
+		});
+	});
+	
+	it("should stop the server if authorized", function(done) {
+		var storageMockGet = sandbox.stub(storage,"getItem").withArgs("user").returns("Jotaro").withArgs("pass").returns(bcrypt.hashSync("adventure"));
+		
+		mockCMD.emit("data","start", function() {
+			request('http://localhost:8000/admin/stop', function (error, response, body) {
+				assert.notOk(error, "No error should be thrown");
+				assert.equal(200, response.statusCode, "status code should be 200");
+				assert.equal(body, "bot stopped!;Server stopped!", "Server should be stopped");
+				done();
+			}).auth('Jotaro', 'adventure');
 		});
 	});
 });

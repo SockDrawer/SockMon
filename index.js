@@ -36,7 +36,7 @@ module.exports = {
 		data = data.toString().trim();
 		if (!currCommand) {
 			if (data.toLowerCase() === "start") {
-				if (!server) module.exports.startServer();
+				if (!server) module.exports.startServer(module.exports.respond);
 				else module.exports.respond("Server already listening on port 8000!");
 			} 
 			else if (data.toLowerCase() === "config" || data.toLowerCase() === "set config") {
@@ -45,15 +45,15 @@ module.exports = {
 			} 
 			else if (data.toLowerCase() === "stop") {
 				if (!server) module.exports.respond("Server is not running!");
-				else module.exports.stopServer();
+				else module.exports.stopServer(module.exports.respond);
 			} 
 			else if (data.toLowerCase() === "pause") {
 				if (!botRunning) module.exports.respond("Bot is not running!");
-				else module.exports.stopBot();
+				else module.exports.stopBot(module.exports.respond);
 			} 
 			else if (data.toLowerCase() === "resume") {
 				if (botRunning) module.exports.respond("Bot is already running!");
-				else module.exports.startBot();
+				else module.exports.startBot(module.exports.respond);
 			} 
 			else if (data.toLowerCase() === "exit") {
 				module.exports.respond("Goodbye!");
@@ -68,7 +68,7 @@ module.exports = {
 			}
 			else if(data.toLowerCase() === "set user") {
 				currCommand = "user";
-				module.exports.respond("Enter new password:");
+				module.exports.respond("Enter new username:");
 			}
 			else {
 				module.exports.respond("Unknown command: '" + data.toLowerCase() + "'")
@@ -94,8 +94,8 @@ module.exports = {
 		}
 	},
 
-	startServer: function() {
-		module.exports.startBot();
+	startServer: function(cb) {
+		module.exports.startBot(cb);
 		server = new Hapi.Server();
 		server.connection({ 
 			host: 'localhost', 
@@ -128,6 +128,40 @@ module.exports = {
 			//Auth for admin route
 			server.auth.strategy('simple', 'basic', { validateFunc: validate });
 
+						
+			server.route({
+				method: 'GET',
+				path:'/admin/stop', 
+				config: {
+		            auth: 'simple',
+		            handler: function (request, reply) {
+						module.exports.stopServer(reply);
+					}
+		        }
+			});
+			
+			server.route({
+				method: 'GET',
+				path:'/admin/pause', 
+				config: {
+		            auth: 'simple',
+		            handler: function (request, reply) {
+						module.exports.stopBot(reply);
+					}
+		        }
+			});
+			
+			server.route({
+				method: 'GET',
+				path:'/admin/resume', 
+				config: {
+		            auth: 'simple',
+		            handler: function (request, reply) {
+						module.exports.startBot(reply);
+					}
+		        }
+			});
+			
 			server.route({
 				method: 'GET',
 				path:'/admin', 
@@ -143,25 +177,31 @@ module.exports = {
 				
 			});
 
+
 			// Start the server
 			server.start();
-			module.exports.respond("Server started! You can access it at localhost:8000");
+			/* istanbul ignore else */
+			if (cb) cb("Server started! You can access it at localhost:8000");
 		});
 	},
-	stopServer: function() {
-		module.exports.stopBot();
-		/* istanbul ignore else */
-		if (server) {
-			server.stop();
-			server = null;
-		}
-		module.exports.respond("Server stopped!");
+	stopServer: function(cb) {
+		module.exports.stopBot(function(stopReply) {
+			/* istanbul ignore else */
+			if (server) {
+				server.stop();
+				server = null;
+			}
+			if (cb) cb(stopReply + ";Server stopped!");
+		});
+		
 	},
-	startBot: function() {
+	startBot: function(cb) {
 		botRunning = true;
+		if (cb) cb("bot started!");
 	},
-	stopBot: function() {
+	stopBot: function(cb) {
 		botRunning = false;
+		if (cb) cb("bot stopped!");
 	}
 }
 
