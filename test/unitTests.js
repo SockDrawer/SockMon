@@ -161,12 +161,14 @@ describe("The command-line parser", function() {
 	
 	it("should change configs", function(done) {
 		var storageMock = sandbox.spy(storage,"setItem");
+		var mockBot = sandbox.stub(bot,"prepare").yields(null);
 		mockOut.reset();
 		
 		mockCMD.emit("data","set config", function() {
 			assert.equal(mockOut.firstCall.args[0],"Enter config file: ","Config file should be accepted");
 			mockOut.reset();
 			mockCMD.emit("data","someconfig.yml", function() {
+				assert(mockBot.called)
 				assert.equal(mockOut.firstCall.args[0],"Config file accepted.","Config file should be accepted");
 				done();
 			});

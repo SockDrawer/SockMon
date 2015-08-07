@@ -78,7 +78,10 @@ module.exports = {
 		else if (currCommand === "config") {
 			currConfig = data;
 			currCommand = "";
-			module.exports.respond("Config file accepted.");
+			bot.prepare(currConfig,function(err) {
+				if(err) module.exports.respond("Error changing config: " + err);
+				else module.exports.respond("Config file accepted.");
+			})
 		}
 
 		else if (currCommand === "pass") {
