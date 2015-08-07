@@ -24,6 +24,10 @@ describe("The command-line parser", function() {
 		mockOut = sandbox.stub(sockMon,"respond");
 		sockMon.init();
 		mockOpen.restore();
+
+		 //don't actually start a web server, ever
+		sandbox.stub(Hapi.Server.prototype,"start");
+		sandbox.stub(Hapi.Server.prototype,"route");
 	})
 
 	afterEach(function() {
@@ -58,19 +62,18 @@ describe("The command-line parser", function() {
 			assert(startServer.calledOnce,"StartServer shuld be called");
 			done();
 		});
-
 	});
 
 	it("should not start the server if it's already running", function(done) {
 		var startServer = sandbox.spy(sockMon,"startServer");
-		sandbox.stub(Hapi.Server.prototype,"start"); //don't actually start
-		sandbox.stub(Hapi.Server.prototype,"route");
+		var mockBot = sandbox.stub(bot,"start").yields(null);
 
 		mockCMD.emit("data","start", function() {
 			mockCMD.emit("data","start", function() {
 				sockMon.stopServer();
 				assert(processInputSpy.calledTwice,"ProcessInput should be called");
 				assert(startServer.calledOnce,"StartServer should be called only once");
+				assert(mockBot.calledOnce,"Bot should be started only once");
 				assert(mockOut.calledWith("Server already listening on port 8000!"),"output should render!");
 				done();
 			});
@@ -79,21 +82,19 @@ describe("The command-line parser", function() {
 
 	it("should stop the server if it's running", function(done) {
 		var stopServer = sandbox.spy(sockMon,"stopServer");
-		sandbox.stub(Hapi.Server.prototype,"start"); //don't actually start
-		sandbox.stub(Hapi.Server.prototype,"route");
+		var mockBot = sandbox.stub(bot,"stop").yields(null);
 
 		mockCMD.emit("data","start", function() {
 			mockCMD.emit("data","stop", function() {
 				assert(processInputSpy.calledTwice,"ProcessInput should be called");
 				assert(stopServer.calledOnce,"StopServer should be called only once");
+				assert(mockBot.calledOnce,"Bot should be stopped only once");
 				done();
 			});
 		});
 	});
 
 	it("should not stop the server if it's not running", function(done) {
-		sandbox.stub(Hapi.Server.prototype,"start"); //don't actually start
-		sandbox.stub(Hapi.Server.prototype,"route");
 		var stopMock = sandbox.stub(sockMon,"stopBot").yields("bot stopped!");
 
 		//ensure not running
@@ -165,11 +166,27 @@ describe("The command-line parser", function() {
 		mockOut.reset();
 		
 		mockCMD.emit("data","set config", function() {
-			assert.equal(mockOut.firstCall.args[0],"Enter config file: ","Config file should be accepted");
+			assert.equal(mockOut.firstCall.args[0],"Enter config file: ","Config command should be accepted");
 			mockOut.reset();
 			mockCMD.emit("data","someconfig.yml", function() {
 				assert(mockBot.called)
 				assert.equal(mockOut.firstCall.args[0],"Config file accepted.","Config file should be accepted");
+				done();
+			});
+		});
+	});
+
+	it("should report config errors", function(done) {
+		var storageMock = sandbox.spy(storage,"setItem");
+		var mockBot = sandbox.stub(bot,"prepare").yields("I AM ERROR");
+		mockOut.reset();
+		
+		mockCMD.emit("data","set config", function() {
+			assert.equal(mockOut.firstCall.args[0],"Enter config file: ","Config command should be accepted");
+			mockOut.reset();
+			mockCMD.emit("data","someconfig.yml", function() {
+				assert(mockBot.called)
+				assert.equal(mockOut.firstCall.args[0],"Error changing config: I AM ERROR","Error should be reported");
 				done();
 			});
 		});
@@ -187,36 +204,46 @@ describe("The command-line parser", function() {
 	
 	it("should be able to pause the bot if it's running", function(done) {
 		var stopMock = sandbox.spy(sockMon,"stopBot");
+		var mockBot = sandbox.stub(bot,"stop");
 		sockMon.startBot();
 
 		mockCMD.emit("data","pause", function() {
 			assert(processInputSpy.calledOnce,"ProcessInput should be called");
 			assert(stopMock.calledOnce,"StopBot should be called only once");
+			assert(mockBot.calledOnce,"Bot should actually stop");
 			done();
 		});
 	});
 	
 	it("should not be able to pause the bot if it's not running", function(done) {
 		var stopMock = sandbox.spy(sockMon,"stopBot");
+		var mockBot = sandbox.stub(bot,"stop");
 
 		mockCMD.emit("data","pause", function() {
 			assert(processInputSpy.calledOnce,"ProcessInput should be called");
 			assert.isFalse(stopMock.called,"StopBot should not be called");
+			assert.isFalse(mockBot.called,"Bot should not be stopped");
 			done();
 		});
 	});
 
 	it("should be able to resume a paused bot", function(done) {
 		var stopMock = sandbox.spy(sockMon,"stopBot");
+		var mockBotStop = sandbox.stub(bot,"stop");
+		var mockBotStart = sandbox.stub(bot,"start");
 		
 		sockMon.startBot();
 		var startMock = sandbox.spy(sockMon,"startBot");
+		mockBotStop.reset();
+		mockBotStart.reset();
 
 		mockCMD.emit("data","pause", function() {
 			mockCMD.emit("data","resume", function() {
 				assert(processInputSpy.calledTwice,"ProcessInput should be called");
 				assert(stopMock.calledOnce,"StopBot should be called only once");
 				assert(startMock.calledOnce,"StartBot should be called only once");
+				assert(mockBotStop.calledOnce,"Bot stop should be called only once");
+				assert(mockBotStart.calledOnce,"Bot start should be called only once");
 				done();
 			});
 		});
@@ -224,11 +251,130 @@ describe("The command-line parser", function() {
 
 	it("should not resume the bot if it's running", function(done) {
 		var stopMock = sandbox.spy(sockMon,"stopBot");
+		var mockBot = sandbox.stub(bot,"start");
 		sockMon.startBot();
+		mockBot.reset();
 
 		mockCMD.emit("data","resume", function() {
 			assert(processInputSpy.called,"ProcessInput should be called");
 			assert.isFalse(stopMock.called,"StopBot should not be called");
+			assert.isFalse(mockBot.called,"Bot should not be started again");
+			done();
+		});
+	});
+})
+
+describe("The bot instance", function() {
+	beforeEach(function() {
+		sandbox = sinon.sandbox.create();
+		mockCMD = new EventEmitter();
+		mockCMD.setEncoding = function() {};
+		processInputSpy = sandbox.spy(sockMon, "processInput");
+
+		//Very briefly mock out process.openstdin, then restore it
+		var mockOpen = sandbox.stub(process,"openStdin").returns(mockCMD);
+		//Also shut up the console
+		mockOut = sandbox.stub(sockMon,"respond");
+		sockMon.init();
+		mockOpen.restore();
+	})
+
+	afterEach(function(done) {
+		var mockBotStop = sandbox.stub(sockMon,"stopBot").yields(null);
+		sockMon.stopServer(function(reply) {
+			sandbox.restore();
+			done();
+		});
+		
+		
+	})
+
+	it("should start the bot when asked", function(done) {
+		var mockBot = sandbox.stub(bot,"start").yields(null);
+
+		sockMon.startBot(function(reply) {
+			assert(mockBot.calledOnce,"Bot should be started");
+			assert.equal(reply, "bot started!", "bot should be started")
+			done();
+		});
+	});
+
+	it("should pass along SockBot errors when starting", function(done) {
+		var mockBot = sandbox.stub(bot,"start").yields("I AM ERROR");
+		mockOut.reset();
+
+		sockMon.startBot(function(reply) {
+			assert(mockBot.calledOnce,"Bot should be started");
+			assert.equal(reply, "ERROR starting bot: I AM ERROR", "error should be reported")
+			done();
+		});
+	});
+
+	it("should stop the bot if it's running", function(done) {
+		var mockBot = sandbox.stub(bot,"stop").yields(null);
+
+		sockMon.stopBot(function(reply) {
+			assert(mockBot.calledOnce,"Bot should be stopped");
+			assert.equal(reply, "bot stopped!", "bot should be stopped")
+			done();
+		});
+	});
+
+	it("should pass along SockBot errors when stopping", function(done) {
+		var mockBot = sandbox.stub(bot,"stop").yields("I AM ERROR");
+		mockOut.reset();
+
+		sockMon.stopBot(function(reply) {
+			assert(mockBot.calledOnce,"Bot should be stopped");
+			assert.equal(reply, "ERROR stopping bot: I AM ERROR", "error should be reported")
+			done();
+		});
+	});
+})
+
+describe("The web server", function() {
+	var mockHapi;
+
+	beforeEach(function() {
+		sandbox = sinon.sandbox.create();
+		mockCMD = new EventEmitter();
+		mockCMD.setEncoding = function() {};
+		processInputSpy = sandbox.spy(sockMon, "processInput");
+
+		//Very briefly mock out process.openstdin, then restore it
+		var mockOpen = sandbox.stub(process,"openStdin").returns(mockCMD);
+		//Also shut up the console
+		mockOut = sandbox.stub(sockMon,"respond");
+		sockMon.init();
+		mockOpen.restore();
+
+		 //don't actually start a web server, ever
+		sandbox.stub(Hapi.Server.prototype,"start");
+		sandbox.stub(Hapi.Server.prototype,"stop");
+
+
+		//or integrate with the bot
+		sandbox.stub(sockMon,"startBot");
+		sandbox.stub(sockMon,"stopBot").yields("stopped");
+	})
+
+	afterEach(function(done) {
+		sandbox.restore();
+		done();
+	});
+
+	it("should start the server when asked", function(done) {
+		sockMon.startServer(function(reply) {
+			assert(Hapi.Server.prototype.start.calledOnce,"server should be started");
+			assert.equal(reply, "Server started! You can access it at localhost:8000", "server should be started")
+			done();
+		});
+	});
+
+	it("should stop the server if it's running", function(done) {
+		sockMon.stopServer(function(reply) {
+			assert(Hapi.Server.prototype.stop.calledOnce,"server should be stopped");
+			assert.equal(reply, "stopped;Server stopped!", "server should be stopped")
 			done();
 		});
 	});
