@@ -197,11 +197,28 @@ module.exports = {
 	},
 	startBot: function(cb) {
 		botRunning = true;
-		if (cb) cb("bot started!");
+		if (!cb) {cb = module.exports.respond}
+		bot.start(function(err){
+			if (err) {
+				cb("ERROR starting bot: " +err);
+			} else {
+				cb("bot started!");
+			}
+			
+		});
+		
 	},
 	stopBot: function(cb) {
 		botRunning = false;
-		if (cb) cb("bot stopped!");
+		if (!cb) {cb = module.exports.respond}
+		bot.stop(function(err){
+			if (err) {
+				cb("ERROR stopping bot: " + err);
+			} else {
+				cb("bot stopped!");
+			}
+			
+		});
 	}
 }
 

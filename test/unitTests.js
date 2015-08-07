@@ -92,15 +92,21 @@ describe("The command-line parser", function() {
 	});
 
 	it("should not stop the server if it's not running", function(done) {
-		var stopServer = sandbox.stub(sockMon,"stopServer");
 		sandbox.stub(Hapi.Server.prototype,"start"); //don't actually start
 		sandbox.stub(Hapi.Server.prototype,"route");
+		var stopMock = sandbox.stub(sockMon,"stopBot").yields("bot stopped!");
 
-		mockCMD.emit("data","stop", function() {
-			assert(processInputSpy.called,"ProcessInput should be called");
-			assert.isFalse(stopServer.called,"StopServer should not be called");
-			done();
+		//ensure not running
+		sockMon.stopServer(function() {
+			var stopServer = sandbox.stub(sockMon,"stopServer");
+			mockCMD.emit("data","stop", function() {
+				assert(processInputSpy.called,"ProcessInput should be called");
+				assert.isFalse(stopServer.called,"StopServer should not be called");
+				done();
+			});
 		});
+
+		
 	});
 
 	it("should reject garbage inputs", function(done) {
