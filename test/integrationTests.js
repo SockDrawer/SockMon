@@ -162,3 +162,49 @@ describe("The website", function() {
 		});
 	});
 });
+
+describe("Issue regressions", function() {
+	
+	/*beforeEach(function() {
+		sandbox = sinon.sandbox.create();
+		mockCMD = new EventEmitter();
+		mockCMD.setEncoding = function() {};
+
+		//Very briefly mock out process.openstdin, then restore it
+		var mockOpen = sandbox.stub(process,"openStdin").returns(mockCMD);
+		//Also shut up the console
+		mockOut = sandbox.stub(sockMon,"respond");
+		sockMon.init();
+		mockOpen.restore();
+	});
+	
+	afterEach(function(done) {
+		sandbox.restore();
+		mockOut = sandbox.stub(sockMon,"respond");
+		sockMon.reset(function() {
+			sandbox.restore();
+			done();
+		});
+	});
+	
+	
+	it("should not be able to pause the bot if it never started (issue #3)", function(done) {
+		var mockBot = sandbox.stub(bot,"start").yields("I AM ERROR");
+		var mockStop = sandbox.spy(sockMon,"stopBot");
+		sandbox.stub(Hapi.Server.prototype,"start");
+		sandbox.stub(Hapi.Server.prototype,"stop");
+		
+		mockOut.reset();
+		
+		sockMon.startBot(function(reply) {
+			assert.equal(reply,"ERROR starting bot: I AM ERROR");
+			mockOut.reset();
+			mockCMD.emit("data","pause", function() {
+				assert.isFalse(mockStop.called,"Bot should not be stopped");
+				assert(mockOut.called)
+				assert.equal(mockOut.firstCall.args[0],"Bot is not running!");
+				done();
+			});	
+		});
+	})*/
+})

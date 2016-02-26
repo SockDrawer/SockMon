@@ -101,7 +101,6 @@ module.exports = {
 		module.exports.startBot(cb);
 		server = new Hapi.Server();
 		server.connection({ 
-			host: 'localhost', 
 			port: 8000 
 		});
 
@@ -199,12 +198,12 @@ module.exports = {
 		
 	},
 	startBot: function(cb) {
-		botRunning = true;
 		if (!cb) {cb = module.exports.respond}
 		bot.start(function(err){
 			if (err) {
 				cb("ERROR starting bot: " +err);
 			} else {
+				botRunning = true;
 				cb("bot started!");
 			}
 			
@@ -212,16 +211,29 @@ module.exports = {
 		
 	},
 	stopBot: function(cb) {
-		botRunning = false;
 		if (!cb) {cb = module.exports.respond}
 		bot.stop(function(err){
 			if (err) {
 				cb("ERROR stopping bot: " + err);
 			} else {
+				botRunning = false;
 				cb("bot stopped!");
 			}
-			
 		});
+	},
+	reset: function(cb) {
+		if (botRunning) {
+			module.exports.stopBot(function(reply) {
+				module.exports.reset(cb);
+			});
+		}
+		if (server) {
+			module.exports.stopServer(function(reply) {
+				module.exports.reset(cb);
+			});
+		}
+		
+		cb();
 	}
 }
 
